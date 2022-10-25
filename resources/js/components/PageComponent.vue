@@ -26,8 +26,16 @@
                             <div class="card-body">
                                 <h6 class="mb-2">Описание авто. </h6>
                                 <textarea v-model="carDescription" class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
-                                <div class="d-flex justify-content-around align-items-center mt-3">
-                                    <button @click="addCar()" data-toggle="tooltip" data-placement="left" title="Добавить" type="submit" class="justify-content-end btn btn-success">{{btnName}}</button>
+                                <div v-show="!intervalEditor">
+                                    <div class="d-flex justify-content-around align-items-center mt-3">
+                                        <button @click="addCar()" data-toggle="tooltip" data-placement="left" title="Добавить" type="submit" class="justify-content-end btn btn-success">Добавить</button>
+                                    </div>
+                                </div>
+                                <div v-show="intervalEditor">
+                                    <div class="d-flex justify-content-around align-items-center mt-3">
+                                        <button @click="saveCar()" data-toggle="tooltip" data-placement="left" title="Добавить" type="submit" class="justify-content-end btn btn-success">Сохранить</button>
+                                        <button @click="discardEdit()" data-toggle="tooltip" data-placement="left" title="Отмена" type="submit" class="justify-content-end btn btn-danger">Отмена</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -87,7 +95,7 @@ export default {
             carDescription: null,
             loginAuth: false,
             headers: "",
-            btnName: 'Добавить',
+            intervalEditor: false,
             user_name: "",
             user_email: "",
             user_password: "",
@@ -122,6 +130,26 @@ export default {
                 alert("Автомобиль добавлен");
             });
         },
+        saveCar: function() {
+            axios.post('/api/save-car', {
+                car_name:           this.carName,
+                car_model:          this.carModel,
+                car_price:          this.carPrice,
+                car_description:    this.carDescription,
+                locked:             "save"
+            }, {
+                headers: this.headers
+            }).then((response) => {
+                this.cars = response.data.cars;
+                this.carName        = null;
+                this.carPrice       = null;
+                this.carModel       = null;
+                this.carDescription = null;
+                clearInterval(this.intervalEditor);
+                this.intervalEditor = false;
+                this.update();
+            });
+        },
         update: function() {
             console.log(this.tokenAuth);
             axios.post('/api/show-cars', {}, {
@@ -130,23 +158,71 @@ export default {
                 this.cars = response.data.cars;
             });
         },
+        discardEdit: function() {
+            axios.post('/api/save-car', {
+                locked:             "discard"
+            }, {
+                headers: this.headers
+            }).then((response) => {
+                this.cars = response.data.cars;
+                this.carName        = null;
+                this.carPrice       = null;
+                this.carModel       = null;
+                this.carDescription = null;
+                clearInterval(this.intervalEditor);
+                this.intervalEditor = false;
+                this.update();
+            });
+        },
+
+        updateEditTime: function(id) {
+            axios.post('/api/edit-car/'+id, {
+                locked: 'update',
+            }, {
+                headers: this.headers
+            }).then((response) => {
+                console.log(response.data);
+            });
+        },
         editCar: function(id) {
-            axios.post('/api/edit-car/'+id, {}, {
+            axios.post('/api/edit-car/'+id, {
+                locked: 'update',
+            }, {
                 headers: this.headers
             }).then((response) => {
                 if(response.data.message) {
                     alert(response.data.message);
                 }
+                else {
+                    let car = response.data;
+                    this.carName        = car.name;
+                    this.carPrice       = car.price;
+                    this.carModel       = car.model;
+                    this.carDescription = car.description;
+                    this.intervalEditor = setInterval(() => {
+                        this.updateEditTime(id)
+                    }, 181000);
+                }
                 console.log(response.data);
             });
         },
+
         deleteCar: function(id) {
             axios.post('/api/delete-car/'+id, {}, {
                 headers: this.headers
             }).then((response) => {
                 this.cars = response.data
+                this.carName        = null;
+                this.carPrice       = null;
+                this.carModel       = null;
+                this.carDescription = null;
+                this.update();
             });
         },
+
+
+
+
         getToken: function() {
             axios.post('/api/login', {
                 name:       this.user_name,
