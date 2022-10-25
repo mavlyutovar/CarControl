@@ -23,6 +23,8 @@ Route::middleware('auth:sanctum')->get('/user', function () {
 Route::group(['middleware' => 'auth:sanctum'], function(){
     Route::post('add-car',[CarController::class, 'create'])
         ->name('add.car');
+    Route::post('save-car',[CarController::class, 'save'])
+        ->name('save.car');
     Route::post('show-cars',[CarController::class, 'index'])
         ->name('show.car');
     Route::post('delete-car/{id}',[CarController::class, 'delete'])

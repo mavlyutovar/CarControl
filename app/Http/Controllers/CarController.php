@@ -18,26 +18,35 @@ class CarController extends Controller
     public function index(Request $request): \Illuminate\Http\JsonResponse
     {
         return response()->json([
-            'reasons' => $this->service->getCars()
+            'cars' => $this->service->getCars()
         ]);
     }
 
     public function create(/*CarRequest*/Request $request)
     {
         $this->service->createCar($request->all());
+        return response()->json([
+            'cars' => $this->service->getCars()
+        ]);
     }
 
-    public function update(/*CarRequest*/Request $request, $id)
+    public function save(/*CarRequest*/Request $request)
     {
-        $this->service->updateCar($request->all(), $id);
+        $userId = $request->user()->id;
+        $this->service->updateCar($request->all(), $userId);
     }
 
-    public function delete(Request $request)
+    public function edit(/*CarRequest*/Request $request, $id)
     {
-        $ids = $request->post('ids');
-        if (empty($ids)) {
+        $userId = $request->user()->id;
+        return $this->service->editCar($id, $userId);
+    }
+
+    public function delete(Request $request, $id)
+    {
+        if (empty($id)) {
             return;
         }
-        $this->service->deleteCarsByIds($ids);
+        $this->service->deleteCarsById($id);
     }
 }
