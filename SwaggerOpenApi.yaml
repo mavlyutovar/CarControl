@@ -1,0 +1,292 @@
+openapi: 3.0.3
+info:
+  title: CarController - OpenAPI 3.0
+  version: 1.0.11
+security:
+  - bearerAuth: []
+externalDocs:
+  description: Проект CarControl на GitHub
+  url: https://github.com/mavlyutovar/CarControl
+servers:
+  - url: http://localhost:821/api/
+    description: devServer
+tags:
+  - name: login
+    description: Авторизация и регистрация пользователя
+  - name: car
+    description: Апи для работы с автомобилями
+paths:
+  /login:
+    post:
+      tags:
+        - login
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        '201':
+          description: Успешный ответ с токеном и данными пользователя
+          content:
+            application/json: 
+              schema: 
+                $ref: "#/components/schemas/User"
+        default:
+          description: Неожиданная ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /show-cars:
+    post:
+      summary: Метод получения списка автомобилей
+      description: Метод предназначен для получения списка всех автомобилей, сохраненных в БД.
+      operationId: showAllCars
+      tags:
+        - car
+      responses:
+        '200':
+          description: Успешный ответ со списком автомобилей
+          content:
+            application/json: 
+              schema: 
+                $ref: "#/components/schemas/Cars"
+        default:
+          description: Неожиданная ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /add-car:
+    post:
+      summary: Метод добавления нового автомобиля
+      description: Метод предназначен для добавления автомобиля в БД.
+      operationId: addNewCar
+      tags:
+        - car
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: "#/components/schemas/AddCar"
+      responses:
+        '200':
+          description: Успешный ответ со списком автомобилей
+          content:
+            application/json: 
+              schema: 
+                $ref: "#/components/schemas/Cars"
+        default:
+          description: Неожиданная ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+                
+  /edit-car/{car_id}:
+    post:
+      summary: Метод для редактирования автомобиля
+      description: Метод предназначен для объявления, что автомобиль редактируется текущим пользователем (параметр locked_by). Метод закрепляет этот автомобиль за пользователем на 3 минуты (locked_at). При повторном вызове метода, параметр locked_at обновляется еще на 3 минуты. Возвращает объект с автомобилем.
+      operationId: editCar
+      tags:
+        - car
+      parameters:
+        - name: car_id
+          in: path
+          required: true
+          description: Идентификатор Автомобиля
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешный ответ со списком автомобилей
+          content:
+            application/json: 
+              schema: 
+                $ref: "#/components/schemas/Car"
+        default:
+          description: Неожиданная ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /save-car:
+    post:
+      summary: Метод сохраняет редактируемый автомобиль.
+      description: Метод предназначен для сохранения новых данных автомобиля в БД. При вызове данного метода редактирование автомобиля закончится и автомобиль открепиться от пользователя. 
+      operationId: saveEditCar
+      tags:
+        - car
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: "#/components/schemas/SaveCar"
+      responses:
+        '200':
+          description: Успешный ответ 
+          content:
+            'application/json': {}
+        default:
+          description: Неожиданная ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /delete-car/{car_id}:
+    post:
+      summary: Метод удаляет автомобиль.
+      description: Метод предназначен для удаления автомобиля из БД. 
+      operationId: deleteCar
+      tags:
+        - car
+      parameters:
+        - name: car_id
+          in: path
+          required: true
+          description: Идентификатор Автомобиля
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешный ответ 
+          content:
+            'application/json': {}
+        default:
+          description: Неожиданная ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT  # optional, for documentation purposes only
+  schemas:
+    User:
+      type: object
+      required:
+        - name
+        - email
+        - id
+      properties:
+        name:
+          description: Имя Пользователя
+          type: string
+          example: Вася
+        password:
+          description: Пароль
+          type: string
+          example: 12345678
+        email:
+          description: Email адрес пользователя
+          type: string
+          example: vasya@gmail.com
+    Car:
+      type: object
+      properties:
+        id:
+          description: Номер автомобиля в БД
+          type: integer
+          example: 5
+        name:
+          description: Название автомобиля
+          type: string
+          example: Mercedes
+        model:
+          description: Модель автомобиля
+          type: string
+          example: C-class
+        price:
+          description: Цена автомобиля
+          type: integer
+          example: 160000
+        description:
+          description: Описание автомобиля
+          type: string
+          example: Хорошая машина
+        created_at:
+          description: Дата и время создания автомобиля в бд
+          type: string
+          example: 2022-07-01T15:00:00+01
+        updated_at:
+          description: Дата и время обновления автомобиля в бд
+          type: string
+          example: 2022-07-01T15:00:00+01
+        locked_at:
+          description: Дата и время, когда истекает время редактирования
+          type: string
+          example: 2022-07-01T15:00:00+01
+        locked_by:
+          description: Номер пользователя кто сейчас редактирует автомобиль
+          type: integer
+          example: 5
+    AddCar:
+      type: object
+      required:
+        - car_name
+      properties:
+        car_name:
+          description: Название автомобиля
+          type: string
+          example: Mercedes
+        car_model:
+          description: Модель автомобиля
+          type: string
+          example: C-class
+        car_price:
+          description: Цена автомобиля
+          type: integer
+          example: 160000
+        car_description:
+          description: Описание автомобиля
+          type: string
+          example: Хорошая машина
+    SaveCar:
+      type: object
+      required:
+        - car_name
+      properties:
+        car_name:
+          description: Название автомобиля
+          type: string
+          example: Mercedes
+        car_model:
+          description: Модель автомобиля
+          type: string
+          example: C-class
+        car_price:
+          description: Цена автомобиля
+          type: integer
+          example: 160000
+        car_description:
+          description: Описание автомобиля
+          type: string
+          example: Хорошая машина
+        locked:
+          description: Параметр для сохранения или отмены изменений.
+          type: string
+          example: save
+    Cars:
+      type: array
+      items:
+        $ref: "#/components/schemas/Car"
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+          
